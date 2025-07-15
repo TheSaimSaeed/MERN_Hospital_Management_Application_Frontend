@@ -11,7 +11,6 @@ const Home = () => {
       <Biography imageUrl={"/Images/about.png"}/>
       <Departments/>
       <MessageForm/>
-      
     </div>
   )
 }
