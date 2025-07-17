@@ -1,10 +1,11 @@
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import { Context } from "../main";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import { Context } from '../main';
+
 
 const AppointmentForm = () => {
+    const { isAuthenticated } = useContext(Context);
 
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
@@ -50,24 +51,21 @@ const AppointmentForm = () => {
 
     const handleAppointment = async (e) => {
         e.preventDefault();
+        
+        if (!isAuthenticated) {
+            toast.error("Please login first to book an appointment");
+            return;
+        }
+
+        // Validate all required fields
+        if (!firstName || !lastName || !cnic || !email || !phone || 
+            !dob || !gender || !appointment_date || !department || 
+            !doctor_firstName || !doctor_lastName || !address) {
+            toast.error("Please fill all fields");
+            return;
+        }
+
         try {
-            
-            const hasVisitedBool = Boolean(hasVisited);
-            console.log({
-                firstName,
-                    lastName,
-                    email,
-                    phone,
-                    cnic,
-                    dob,
-                    gender,
-                    appointment_date: appointment_date,
-                    department,
-                    doctor_firstName: doctor_firstName,
-                    doctor_lastName: doctor_lastName,
-                    hasVisited,
-                    address,
-            })
             const { data } = await axios.post(
                 "http://localhost:4000/api/v1/appointment/booking",
                 {
@@ -78,40 +76,39 @@ const AppointmentForm = () => {
                     cnic,
                     dob,
                     gender,
-                    appointment_date: appointment_date,
+                    appointment_date,
                     department,
-                    doctor_firstName: doctor_firstName,
-                    doctor_lastName: doctor_lastName,
-                    hasVisited: hasVisitedBool,
-                    address,
+                    doctor_firstName,
+                    doctor_lastName,
+                    hasVisited,
+                    address
                 },
                 {
                     withCredentials: true,
                     headers: { "Content-Type": "application/json" },
                 }
-            ).then((res) => {
-                toast.success(res.data.message);
-                    setFirstName(""),
-                    setLastName(""),
-                    setEmail(""),
-                    setPhone(""),
-                    setCnic(""),
-                    setCnic(""),
-                    setGender(""),
-                    setAppointment_date(""),
-                    setDepartment(""),
-                    setDoctor_firstName(""),
-                    setDoctor_lastName(""),
-                    setHasVisited(""),
-                    setAddress("");
-            })
+            );
 
+            toast.success(data.message);
+            
+            // Reset form fields
+            setFirstName("");
+            setLastName("");
+            setEmail("");
+            setPhone("");
+            setCnic("");
+            setGender("");
+            setAppointment_date("");
+            setDepartment("");
+            setDoctor_firstName("");
+            setDoctor_lastName("");
+            setHasVisited(false);
+            setAddress("");
 
         } catch (error) {
-            toast.error(error.response.data.message);
-
+            console.error("Appointment Error:", error.response?.data);
+            toast.error(error.response?.data?.message || "Error booking appointment");
         }
-
     };
 
 
@@ -148,7 +145,7 @@ const AppointmentForm = () => {
                             onChange={(e) => setEmail(e.target.value)}
                         />
                         <input
-                            type="number"
+                            type="text"
                             placeholder="Mobile Number"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
@@ -156,7 +153,7 @@ const AppointmentForm = () => {
                     </div>
                     <div>
                         <input
-                            type="number"
+                            type="text"
                             placeholder="CNIC"
                             value={cnic}
                             onChange={(e) => setCnic(e.target.value)}
@@ -167,7 +164,7 @@ const AppointmentForm = () => {
                             value={dob}
                             onChange={(e) => setDob(e.target.value)}
                         />
-                        
+
                     </div>
                     <div>
                         <input
@@ -182,7 +179,7 @@ const AppointmentForm = () => {
                             <option value="Female">Female</option>
                         </select>
                     </div>
-                    <div>   
+                    <div>
                         <select
                             value={department}
                             onChange={(e) => {
@@ -191,15 +188,14 @@ const AppointmentForm = () => {
                                 setDoctor_lastName("");
                             }}
                         >
-                            {departmentsArray.map((depart, index) => {
-                                return (
-                                    <option value={depart} key={index}>
-                                        {depart}
-                                    </option>
-                                );
-                            })}
+                            <option value="">Select Department</option>
+                            {departmentsArray.map((depart, index) => (
+                                <option value={depart} key={index}>
+                                    {depart}
+                                </option>
+                            ))}
                         </select>
-                       
+
                         <select
                             value={JSON.stringify({
                                 firstName: doctor_firstName,
@@ -254,6 +250,7 @@ const AppointmentForm = () => {
                     </div>
                 </form>
             </div>
+            <ToastContainer/>
         </>
     )
 }
